@@ -1,0 +1,30 @@
+﻿@model Soccer.Models.Team
+
+@{
+    ViewData["Title"] = "Деталі по команді";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h1>Деталі щодо команди</h1>
+
+<div>
+    <hr />
+    <dl class="row">
+        <dt class = "col-sm-2">
+            @Html.DisplayNameFor(model => model.Name)
+        </dt>
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.Name)
+        </dd>
+        <dt class = "col-sm-2">
+            @Html.DisplayNameFor(model => model.Coach)
+        </dt>
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.Coach)
+        </dd>
+    </dl>
+</div>
+<div>
+    <a asp-action="Edit" asp-route-id="@Model?.Id">Редагувати дані про команду</a> |
+    <a asp-action="Index">Повернутися до списку команд</a>
+</div>

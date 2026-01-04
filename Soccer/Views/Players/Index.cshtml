@@ -1,0 +1,184 @@
+﻿@model Soccer.Models.IndexViewModel
+
+@{
+    ViewData["Title"] = "Гравці";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+    string filters = Context.Request.Query["filters"].FirstOrDefault() ?? "";
+    string sorts = Context.Request.Query["sorts"].FirstOrDefault() ?? "";
+    string pageSize = Context.Request.Query["pageSize"].FirstOrDefault() ?? Model.PageSize.ToString();
+    int currentTeamId = ViewBag.CurrentTeamId as int? ?? 0;
+
+    string baseQuery = $"?filters={System.Web.HttpUtility.UrlEncode(filters)}&sorts={System.Web.HttpUtility.UrlEncode(sorts)}&pageSize={pageSize}";
+}
+
+<h1 class="mb-4">Список гравців</h1>
+
+<form method="get" class="card shadow-sm mb-4 border-0">
+    <div class="card-body">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-6">
+                <label class="form-label fw-medium">Фільтри (через кому)</label>
+                <input name="filters" class="form-control" value="@filters"
+                       placeholder="Name@@=Мба, Position@@=вінгер, Age>25" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fw-medium">Сортування</label>
+                <input name="sorts" class="form-control" value="@sorts"
+                       placeholder="-Age, Name" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fw-medium">На стор.</label>
+                <input name="pageSize" type="number" class="form-control" value="@pageSize" min="4" max="50" />
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">Застосувати</button>
+            </div>
+        </div>
+        <small class="text-muted d-block mt-2">
+            Приклади: Name@@=Кіліан (містить), Age&gt;=25 (від 25), Position==Форвард, TeamId==1
+        </small>
+    </div>
+</form>
+
+<div class="card shadow-sm mb-4 border-0">
+    <div class="card-body">
+        <h5 class="card-title mb-3">Швидкий фільтр по командах</h5>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="?pageSize=@pageSize&sorts=@sorts" class="btn btn-sm @(currentTeamId == 0 ? "btn-primary" : "btn-outline-primary")">
+                Всі команди
+            </a>
+            @foreach (var team in ViewBag.Teams as List<Soccer.Models.Team>)
+            {
+                <a href="?filters=TeamId==@team.Id&pageSize=@pageSize&sorts=@sorts"
+                   class="btn btn-sm @(team.Id == currentTeamId ? "btn-primary" : "btn-outline-primary")">
+                    @team.Name
+                </a>
+            }
+        </div>
+    </div>
+</div>
+
+<p class="mb-3">
+    <a asp-action="Create" class="btn btn-success">Додати нового гравця</a>
+    <span class="ms-3 text-muted">Знайдено: @Model.TotalCount гравців</span>
+</p>
+
+<table class="table table-striped table-hover align-middle">
+    <thead class="table-light">
+        <tr>
+            <th>Ім'я</th>
+            <th>Вік</th>
+            <th>Позиція</th>
+            <th>Команда</th>
+            <th class="text-end">Дії</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (!Model.Players.Any())
+        {
+            <tr>
+                <td colspan="5" class="text-center text-muted py-5">Гравців не знайдено, ой вей...</td>
+            </tr>
+        }
+        else
+        {
+            @foreach (var item in Model.Players)
+            {
+                <tr>
+                    <td><strong>@item.Name</strong></td>
+                    <td>@item.Age</td>
+                    <td>@item.Position</td>
+                    <td>@(item.Team?.Name ?? "-")</td>
+                    <td class="text-end">
+                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">Редагувати</a>
+                        <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-info">Деталі</a>
+                        <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-outline-danger">Видалити</a>
+                    </td>
+                </tr>
+            }
+        }
+    </tbody>
+</table>
+
+@if (Model.TotalPages > 1)
+{
+    <nav aria-label="Пагінація">
+        <ul class="pagination justify-content-center">
+            @if (Model.HasPrevious)
+            {
+                <li class="page-item">
+                    <a class="page-link" href="@baseQuery&page=@(Model.Page - 1)">Попередня</a>
+                </li>
+            }
+            else
+            {
+                <li class="page-item disabled"><span class="page-link">Попередня</span></li>
+            }
+
+            @for (int i = 1; i <= Model.TotalPages; i++)
+            {
+                if (i == Model.Page)
+                {
+                    <li class="page-item active"><span class="page-link">@i</span></li>
+                }
+                else
+                {
+                    <li class="page-item">
+                        <a class="page-link" href="@baseQuery&page=@i">@i</a>
+                    </li>
+                }
+            }
+
+            @if (Model.HasNext)
+            {
+                <li class="page-item">
+                    <a class="page-link" href="@baseQuery&page=@(Model.Page + 1)">Наступна</a>
+                </li>
+            }
+            else
+            {
+                <li class="page-item disabled"><span class="page-link">Наступна</span></li>
+            }
+        </ul>
+    </nav>
+}
+
+@section Scripts {
+    <!-- !!! SignalR клієнт -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/9.0.6/signalr.min.js"></script>
+
+    <script>
+        console.log("%c[SignalR] Завантажено версію 9.0.6 з CDN", "color: cyan; font-weight: bold;");
+
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/playersHub", {
+                skipNegotiation: true, // ключ для localhost, щоб одразу використовувати WebSockets, skipNegotiation - це параметр, який дозволяє пропустити етап переговорів і одразу використовувати вказаний транспортний протокол
+                // коли клієнт (браузер) хоче підключитися до SignalR-хаба, за замовчуванням відбувається такий процес:
+                // клієнт робить перший HTTP-запит до /playersHub/negotiate (це етап negotiation)
+                // cервер відповідає: "ось які транспорти я підтримую (WebSockets, Server-Sent Events, Long Polling) і ось connectionId для тебе"
+                // клієнт обирає найкращий транспорт (зазвичай WebSockets) і робить друге підключення вже з цим connectionId
+                transport: signalR.HttpTransportType.WebSockets // кажемо, "не роби цей окремий negotiate-запит. відразу підключайся через вказаний транспорт (WebSockets) і довірся, що все налаштовано правильно"
+            })
+            .withAutomaticReconnect([0, 1000, 3000, 10000])
+            .configureLogging(signalR.LogLevel.Information)
+            .build();
+
+        // коли сервер надсилає повідомлення про зміни
+        connection.on("PlayersUpdated", () => {
+            console.log("%c[SignalR] Отримано PlayersUpdated — оновлюємо список гравців!", "color: lime; font-weight: bold; font-size: 16px;");
+            setTimeout(() => {
+                location.reload(); // перезавантажуємо сторінку з поточними фільтрами/пагінацією
+            }, 300);
+        });
+
+        // запуск підключення
+        connection.start()
+            .then(() => {
+                console.log("%c[SignalR] Підключено до хабу успішно!", "color: lime; font-weight: bold; font-size: 18px;");
+            })
+            .catch(err => {
+                console.error("%c[SignalR] Помилка підключення:", "color: red; font-weight: bold;", err);
+            });
+    </script>
+}

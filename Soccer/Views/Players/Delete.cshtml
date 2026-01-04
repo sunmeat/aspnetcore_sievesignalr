@@ -1,0 +1,46 @@
+﻿@model Soccer.Models.Player
+
+@{
+    ViewData["Title"] = "Видалити гравця";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h1>Видалення гравця</h1>
+
+<h3>Ви дійсно хочете видалити гравця?</h3>
+<div>
+    <h4>Дані про гравця</h4>
+    <hr />
+    <dl class="row">
+        <dt class = "col-sm-2">
+            @Html.DisplayNameFor(model => model.Name)
+        </dt>
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.Name)
+        </dd>
+        <dt class = "col-sm-2">
+            @Html.DisplayNameFor(model => model.Age)
+        </dt>
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.Age)
+        </dd>
+        <dt class = "col-sm-2">
+            @Html.DisplayNameFor(model => model.Position)
+        </dt>
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.Position)
+        </dd>
+        <dt class = "col-sm-2">
+            @Html.DisplayNameFor(model => model.Team)
+        </dt>
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.Team.Id)
+        </dd>
+    </dl>
+    
+    <form asp-action="Delete">
+        <input type="hidden" asp-for="Id" />
+        <input type="submit" value="Видалити гравця" class="btn btn-danger" /> |
+        <a asp-action="Index">Повернутися до списку гравців</a>
+    </form>
+</div>
